@@ -6,19 +6,21 @@
 
 
 //--------------- Define -----------------------------------------//
-#define DIR_PIN 7
-#define STEP_PIN 6
+#define ENA_PIN 8
+#define DIR_PIN 2 
+#define STEP_PIN 5
+#define SERVO_PIN A0
 
-#define SLP 13
+//#define SLP 13
+
 #define MOTOR_STEPS 200
 #define RPM 120
-#define MICROSTEPS 16
-
+#define MICROSTEPS 8
 #define CYCLE_DURATION 10000
 
 //---------------- Objects ---------------------------------------//
 
-BasicStepperDriver stepper(MOTOR_STEPS, dir_pin, step_pin);
+BasicStepperDriver stepper(MOTOR_STEPS, DIR_PIN, STEP_PIN);
 Servo myservo;
 
 //--------------- declaring global variables ----------------------//
@@ -32,31 +34,42 @@ int vitesse_sens1 = 0;
 int vitesse_sens2 = 0;
 
 //-------- Timers
-unsigned long cycleStartMillis;
+unsigned long startCycleMillis;
+unsigned long fullCycleMillis;
+unsigned long cycleRunningTime;
 
 //--------------- function headers---------------------------------//
 int full_cycle();
 int yoyo_cycle();
 int sway_rotate();
 
+int stop_cycle();
+
 
 
 void setup() {
   Serial.begin(9600);
   
-  myservo.attach(9,400,2500);  // attaches the servo on pin 9 to the servo object
+  myservo.attach(SERVO_PIN);  // attaches the servo on pin 9 to the servo object
                                // 400 and 500 are min and max values for write 
   stepper.begin(RPM, MICROSTEPS);
   
   pinMode (DIR_PIN,  OUTPUT);
   pinMode (STEP_PIN, OUTPUT);
-  pinMode (SLP,      OUTPUT);
-  digitalWrite(SLP,  LOW);
+  pinMode (ENA_PIN,  OUTPUT);
+  
+  digitalWrite(ENA_PIN,  LOW);
 
   while (!Serial) {
     ;                          // wait for serial port to connect.
   }
   Serial.print("Starting : ");
+  Serial.print("Ready for mixing!\n\
+  Please choose an option :\n\
+  \tType 1 for Full cycle\n\
+  \tType 2 for Yoyo cycle\n\
+  \tType 3 for Sway & Rotate cycle\n");
+  
 }
 
 
@@ -76,15 +89,9 @@ void loop() {
 }
 
 int get_cycle(){
-  Serial.print("Ready for mixing!\n\
-  Please choose an option :\n\
-  \tType 1 for Full cycle\n\
-  \tType 2 for Yoyo cycle\n\
-  \tType 3 for Sway & Rotate cycle\n");
-  
   // store user input in input_cylce
    if (Serial.available() > 0) {
-    userInput = Serial.read();
+    int userInput = Serial.read();
     switch (userInput) {
       case 's':
       stopCycle = true;
@@ -111,24 +118,37 @@ int get_cycle(){
 }
 
 int full_cycle(){
-  
-   fullCycleMillis = millis();
-   cycleRunningTime = fullCycleMillis - startCycleMillis;
-   
-   if (cycleRunninTime < CYCLE_DURATION){
-      if ((trunc((cycleRunningTime/1000) % 2)) == 0)
-      myservo.write(60);  
-      else
-      myservo.write(130);
+   if(inputCycle == 1){
+     fullCycleMillis = millis();
+     cycleRunningTime = fullCycleMillis - startCycleMillis;
+     stepper.setRPM(200);
+     
+     if (cycleRunningTime < CYCLE_DURATION){
+        //-------- stepper 
+        
+       
+        //-------- servo
+        if ((trunc((cycleRunningTime/1000) % 2)) == 0){
+          myservo.write(60); 
+          stepper.rotate(10); 
+        }
+         
+        else{
+          myservo.write(130);
+          stepper.rotate(-10);
+        }
+     }
    }
 }
 
 int yoyo_cycle(){
-   myservo.write(60);  
-   myservo.write(130);  
+   ;  
 }
 
 int sway_rotate(){
-   myservo.write(0);  
-   myservo.write(180);  
+   ;  
+}
+
+int stop_cycle(){
+  myservo.write(90);
 }
