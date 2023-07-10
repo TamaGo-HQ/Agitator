@@ -1,21 +1,19 @@
-//--------------- Libraries --------------------------------------//
-#include <Servo.h>
-#include <Arduino.h>
-#include "BasicStepperDriver.h"
-#include <math.h> 
-
+//--------------- function headers---------------------------------//
+int full_cycle();
+int yoyo_cycle();
+int sway_rotate();
+int stop_cycle();
+int print_cycle_done();
+int print_options();
 
 //--------------- Define -----------------------------------------//
-
-#define LITTLE_SERVO_PIN 5
-#define BIG_SERVO_PIN 3
-
 #define CYCLE_DURATION 10000
 
 //---------------- Objects ---------------------------------------//
 
 Servo LittleServo;
 Servo BigServo;
+
 
 //--------------- declaring global variables ----------------------//
 int inputCycle = 0;
@@ -32,49 +30,6 @@ unsigned long startCycleMillis;
 unsigned long fullCycleMillis;
 unsigned long cycleRunningTime;
 
-//--------------- function headers---------------------------------//
-int full_cycle();
-int yoyo_cycle();
-int sway_rotate();
-
-int stop_cycle();
-
-
-
-void setup() {
-  Serial.begin(9600);
-  
-  LittleServo.attach(LITTLE_SERVO_PIN);  // attaches the servo on pin 9 to the servo object
-                               // 400 and 500 are min and max values for write 
-  
-  BigServo.attach(BIG_SERVO_PIN);
-  
-  while (!Serial) {
-    ;                          // wait for serial port to connect.
-  }
-  Serial.print("Starting : ");
-  print_options();
-  
-}
-
-
-
-void loop() {
-  //---------------   get the user input
-  get_cycle(); 
-  
-  //case fc -> function rotate full cycle
-  if(!stopCycle){
-      full_cycle();
-      yoyo_cycle();
-      sway_rotate();
-  }
-  else{
-    stop_cycle();
-    print_options();
-  }
-
-}
 
 int get_cycle(){
   // store user input in input_cylce
@@ -101,7 +56,6 @@ int get_cycle(){
       
       default :
       Serial.print("invalid input\n");
-      
     }
   }  
 }
@@ -122,14 +76,15 @@ int full_cycle(){
         if ((trunc((cycleRunningTime/1000) % 2)) == 0){
           BigServo.write(0); 
         }
-        else{ //run counter counter clockwise
+        else{ //run counter clockwise
           BigServo.write(180); 
         } 
      }
      else{
       stop_cycle();
       print_cycle_done();
-      inputCycle = 0;
+      print_options();
+      inputCycle = 0; // so it doesnt enter this branch event if 
      }
    }
 }
@@ -156,5 +111,5 @@ int print_options(){
 }
 
 int print_cycle_done(){
-  Serial.print("Cycle Done!");
+  Serial.print("Cycle Done!\n");
 }
