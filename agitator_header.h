@@ -7,6 +7,8 @@ int exit_cycle();
 int print_cycle_done();
 int print_options();
 int print_cycle_done();
+int resume_cycle();
+int go_to_cycle();
 
 //--------------- Define -----------------------------------------//
 #define CYCLE_DURATION 10000
@@ -17,46 +19,44 @@ Servo BigServo;
 Servo LittleServo;
 
 //--------------- declaring global variables ----------------------//
-int   inputCycle = 0;
-bool  pausedCycle = false;
+int   inputCycle = 0;             // takes (1,2,3 for cycles, and 0 by default or when cycle is exited/completed)
+bool  pausedCycle = false;        // false by default and true when cycle is paused
 
 
 //-------- Timers
-unsigned long startCycleMillis = 0;
-unsigned long currentTimeMillis = 0;
-unsigned long cycleRunningTime = 0;
-unsigned long cyclePausedTime = 0;
-unsigned long pauseCycleMillis = 0; // intialisition to this variable is necessary
-
+unsigned long startCycleMillis  = 0; // when the user pressed start cycle 
+unsigned long currentTimeMillis = 0;// literally, what time is it now
+unsigned long cycleRunningTime  = 0; // time period where the cycle was actually running (without pause)
+unsigned long cyclePausedTime   = 0;  // time period where the cycle was paused
+unsigned long pauseCycleMillis  = 0; // intialisition to this variable is necessary
+unsigned long totalPausedTime   = 0;  // using it for now, maybe not optimal solution, but functional nevertheless
 
 int get_cycle(){
   // store user input in input_cylce
    if (Serial.available() > 0) {
     int userInput = Serial.read();
+
     switch (userInput) {
       case 'x' :
-      exit_cycle();
-      break;
+        exit_cycle();
+        break;
 
       case 'p':
-      pause_cycle();
-      break;
+        pause_cycle();
+        break;
       
       case 'c':
-      pausedCycle = false;
-      Serial.print("Cycle Resumed\n");
-      break;
+        resume_cycle();   
+        break;
       
       case '1' :
       case '2':
       case '3':
-      pausedCycle = false;
-      inputCycle = userInput - 48;
-      startCycleMillis = millis();
-      break;
-      
+        go_to_cycle();
+        break;
+        
       default :
-      Serial.print("invalid input\n");
+        Serial.print("invalid input\n");
     }
   }  
 }
@@ -68,15 +68,16 @@ int full_cycle(){
      currentTimeMillis = millis(); //lacks clarity in naming && no definition
      
      //-- Calculate time period since the cycle started 
-     cycleRunningTime = currentTimeMillis - startCycleMillis - cyclePausedTime; 
-
+     cycleRunningTime = currentTimeMillis - startCycleMillis - totalPausedTime; 
+    
+     //--  for debugging
      Serial.print("cycleRunningTime = "); Serial.print(cycleRunningTime);Serial.print("\n");
      Serial.print("cyclePausedtime\t");Serial.print(cyclePausedTime);Serial.print("\n");
      
      if (cycleRunningTime < CYCLE_DURATION){
         
         LittleServo.write(150);
-        //-------- if the number of seconds is pair -> run clockwise
+        //-- if the number of seconds is pair -> run clockwise
         /*if ((trunc((cycleRunningTime/1000) % 2)) == 0){
           BigServo.write(50); 
         }
@@ -101,15 +102,26 @@ int sway_rotate(){
 int exit_cycle(){
   LittleServo.write(90);
   print_cycle_done();
-  print_options(); 
+  print_options();
+  totalPausedTime = 0; // cycle finished -> reset totalPausedTime 
   inputCycle = 0; 
 }
 
 int pause_cycle(){
+  if(!pausedCycle){ // without this condition, if user hits pause when its already paused, will reset the variable
     LittleServo.write(90);
     Serial.print("Cycle Paused\n"); 
-    pauseCycleMillis = millis(); // time when the user last pressed pause
-    pausedCycle = true; // ? ambiguous variable, hmmmmm ?
+    pauseCycleMillis = millis();   // time when the user last pressed pause
+    pausedCycle = true;           // ? ambiguous variable, hmmmmm ?
+  } 
+}
+
+int resume_cycle(){
+  if(pausedCycle){
+    pausedCycle = false;
+    Serial.print("Cycle Resumed\n");
+    totalPausedTime += cyclePausedTime;
+  }
 }
 
 int idle_state(){
@@ -124,6 +136,15 @@ int idle_state(){
     if((millis() % 500 ) == 0){
       Serial.print("cyclePausedtime\t");Serial.print(cyclePausedTime);Serial.print("\n");
     }
+  }
+}
+
+int go_to_cycle(){
+  if(!inputcycle){ // will ignore your request if there s an ongoing cycle
+    pausedCycle = false;
+    inputCycle = userInput - 48;
+    startCycleMillis = millis();
+    Serial.print(startCycleMillis);
   }
 }
 
