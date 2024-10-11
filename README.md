@@ -9,8 +9,5 @@ Multi-threading generally refers to running multiple threads (or processes) simu
 **Main Loop Functionality**
 The main loop function executes all operations sequentially throughout the board's running time. An examination of the algorithm reveals that there are no loops or delays in any function—only conditional statements (if-else and, occasionally, switch-case) are utilized. This design ensures the board remains responsive to user interrupts.
 
-**Code Overview**
-For a global view of the code, refer to the following flowchart:
-![image](https://github.com/user-attachments/assets/dafcca5e-bd89-410f-9374-9484bb6745ae)
-
+**Library**
 All functions and global variables are declared in a library specifically developed for this project.
