@@ -1,5 +1,8 @@
 # Project Context
 Chemotherapy requires precise drug preparation, often involving powdered drugs mixed with a diluting solution. The challenge is to avoid damaging the sensitive drug molecules during the mixing process. This project focuses on developing a medical agitator that gently mixes vials at low speeds to prevent molecular degradation, ensuring accurate and safe chemotherapy drug preparation.
+
+ ![image](https://github.com/user-attachments/assets/3ffa5af9-826a-4332-939e-17518687e5b4)
+
 # Notes on the code
 To make the machine responsive to external events and user input (e.g., controlling the rotating motors and stopping/continuing operations when interrupted), we employ pseudo multi-threading
 
